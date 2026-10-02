@@ -68,16 +68,23 @@ class CitationChecker(Middleware):
     name = "citation_checker"
 
     def after_agent(self, ctx, report):
-        # TODO (§11): khoảng 10-25 dòng.
-        #  1. Lấy report["claims"]; bỏ qua nếu rỗng hoặc ctx.corpus là None.
-        #  2. Với mỗi claim, gọi ctx.corpus.get(claim["doc_id"]).
-        #     Nếu tài liệu tồn tại VÀ claim["text"] khớp NGUYÊN VĂN một
-        #     DÒNG trong body của nó (không phải chỉ "nằm trong body")
-        #     -> trích dẫn đã đúng, giữ nguyên claim.
-        #  3. Nếu không: tìm trong ctx.corpus.docs tài liệu đầu tiên thoả
-        #     doc.body in ctx.observed_text  và  claim["text"] khớp
-        #     nguyên văn một DÒNG của doc.body -> đó là nguồn thật.
-        #     Đổi doc_id sang nó, GIỮ NGUYÊN text.
-        #  4. Không tìm được nguồn nào -> để `critic` xử lý, đừng bịa doc_id.
-        #  5. Cập nhật report["citations"] = danh sách doc_id đã sắp xếp.
-        return report  # <- mặc định KHÔNG LÀM GÌ: agent vẫn chạy được
+        claims = report.get("claims")
+        if not claims or ctx.corpus is None:
+            return report
+            
+        for claim in claims:
+            text = claim.get("text", "")
+            doc_id = claim.get("doc_id")
+            
+            doc = ctx.corpus.get(doc_id)
+            if doc is not None and text in doc.body.split('\n'):
+                continue
+                
+            for d in ctx.corpus.docs:
+                if d.body in ctx.observed_text and text in d.body.split('\n'):
+                    claim["doc_id"] = d.doc_id
+                    break
+                    
+        doc_ids = {c["doc_id"] for c in claims if "doc_id" in c}
+        report["citations"] = sorted(list(doc_ids))
+        return report
