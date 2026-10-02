@@ -86,7 +86,7 @@ class CitationChecker(Middleware):
                 
             found = False
             for d in ctx.corpus.docs:
-                if any(text in line for line in d.body.splitlines() if line in ctx.observed_text):
+                if d.body in ctx.observed_text and any(text in line for line in d.body.splitlines()):
                     claim["doc_id"] = d.doc_id
                     found = True
                     break

@@ -86,6 +86,8 @@ class Retry(Middleware):
         self.reserve = max(0, int(reserve))
 
     def wrap_tool_call(self, ctx, call, name, args):
+        if name == "submit":
+            return call(name, args)
         result = call(name, args)
         attempts = 1
         while attempts < self.max_attempts:
