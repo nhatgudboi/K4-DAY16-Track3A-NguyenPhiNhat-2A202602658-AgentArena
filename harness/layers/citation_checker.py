@@ -71,20 +71,29 @@ class CitationChecker(Middleware):
         claims = report.get("claims")
         if not claims or ctx.corpus is None:
             return report
-            
         for claim in claims:
+            if not isinstance(claim, dict):
+                continue
             text = claim.get("text", "")
+            if not text:
+                continue
+                
             doc_id = claim.get("doc_id")
+            doc = ctx.corpus.get(doc_id) if doc_id else None
             
-            doc = ctx.corpus.get(doc_id)
             if doc is not None and any(text in line for line in doc.body.splitlines()):
                 continue
                 
+            found = False
             for d in ctx.corpus.docs:
-                if d.body in ctx.observed_text and any(text in line for line in d.body.splitlines()):
+                if any(text in line for line in d.body.splitlines() if line in ctx.observed_text):
                     claim["doc_id"] = d.doc_id
+                    found = True
                     break
                     
-        doc_ids = {c["doc_id"] for c in claims if "doc_id" in c}
+            if not found and "doc_id" in claim:
+                del claim["doc_id"]
+                    
+        doc_ids = {c["doc_id"] for c in claims if isinstance(c, dict) and "doc_id" in c}
         report["citations"] = sorted(list(doc_ids))
         return report

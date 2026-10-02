@@ -470,7 +470,7 @@ class ReActAgent:
         *,
         corpus=None,
         max_steps: int = MAX_STEPS,
-        system_prompt: str = ARENA_SYSTEM_PROMPT,
+        system_prompt: str = ARENA_SYSTEM_PROMPT_REAL,
     ) -> None:
         self.model = model
         self.tools = tools

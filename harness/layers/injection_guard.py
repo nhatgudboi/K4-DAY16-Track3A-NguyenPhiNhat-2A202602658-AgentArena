@@ -65,10 +65,15 @@ class InjectionGuard(Middleware):
 
     def wrap_tool_call(self, ctx, call, name, args):
         result = call(name, args)
-        if BLOCK_START not in result.content:
+        if result is None:
             return result
             
-        content = result.content
+        content = getattr(result, "content", "") or ""
+        error = getattr(result, "error", "") or ""
+        
+        if BLOCK_START not in content and BLOCK_START not in error:
+            return result
+            
         while BLOCK_START in content:
             start_idx = content.find(BLOCK_START)
             end_idx = content.find(BLOCK_END, start_idx)
@@ -77,7 +82,15 @@ class InjectionGuard(Middleware):
             else:
                 content = content[:start_idx] + PLACEHOLDER
                 
-        return ToolResult(ok=result.ok, content=content, error=result.error)
+        while BLOCK_START in error:
+            start_idx = error.find(BLOCK_START)
+            end_idx = error.find(BLOCK_END, start_idx)
+            if end_idx != -1:
+                error = error[:start_idx] + PLACEHOLDER + error[end_idx + len(BLOCK_END):]
+            else:
+                error = error[:start_idx] + PLACEHOLDER
+                
+        return ToolResult(ok=result.ok, content=content, error=error)
 
     def after_agent(self, ctx, report):
         if report and "answer" in report:

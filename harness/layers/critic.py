@@ -93,11 +93,10 @@ class Critic(Middleware):
                 if len(parts) == 2 and parts[0] in ctx.observed_text and parts[1] in ctx.observed_text:
                     doc1, doc2 = None, None
                     for d in ctx.corpus.docs:
-                        if d.body in ctx.observed_text:
-                            if not doc1 and any(parts[0] in line for line in d.body.splitlines()):
-                                doc1 = d.doc_id
-                            if not doc2 and any(parts[1] in line for line in d.body.splitlines()):
-                                doc2 = d.doc_id
+                        if not doc1 and any(parts[0] in line for line in d.body.splitlines() if line in ctx.observed_text):
+                            doc1 = d.doc_id
+                        if not doc2 and any(parts[1] in line for line in d.body.splitlines() if line in ctx.observed_text):
+                            doc2 = d.doc_id
                     if doc1 and doc2 and doc1 != doc2:
                         c1 = dict(claim)
                         c1["text"] = parts[0]
@@ -115,7 +114,6 @@ class Critic(Middleware):
             report["abstain"] = True
             report["claims"] = []
             report["citations"] = []
-            report["answer"] = "Tôi không có đủ căn cứ để trả lời."
         else:
             doc_ids = {c["doc_id"] for c in valid_claims if "doc_id" in c}
             report["citations"] = sorted(list(doc_ids))
