@@ -94,9 +94,9 @@ class Critic(Middleware):
                     doc1, doc2 = None, None
                     for d in ctx.corpus.docs:
                         if d.body in ctx.observed_text:
-                            if not doc1 and parts[0] in d.body.split('\n'):
+                            if not doc1 and any(parts[0] in line for line in d.body.splitlines()):
                                 doc1 = d.doc_id
-                            if not doc2 and parts[1] in d.body.split('\n'):
+                            if not doc2 and any(parts[1] in line for line in d.body.splitlines()):
                                 doc2 = d.doc_id
                     if doc1 and doc2 and doc1 != doc2:
                         c1 = dict(claim)
